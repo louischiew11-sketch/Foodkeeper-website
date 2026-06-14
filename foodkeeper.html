@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Food Keeper</title>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ══ AUTH SCREEN ══ -->
+<div class="auth-screen" id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <span class="auth-logo-icon">🥬</span>
+      <h1>Food Keeper</h1>
+      <p>Track ingredients, reduce waste</p>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Log In</button>
+      <button class="auth-tab" id="tab-register" onclick="switchTab('register')">Register</button>
+    </div>
+    <div class="auth-error" id="auth-error"></div>
+    <div class="auth-success" id="auth-success"></div>
+    <div class="form-field">
+      <label class="form-label">Email</label>
+      <input class="form-input" type="email" id="auth-email" placeholder="your@email.com" />
+    </div>
+    <div class="form-field">
+      <label class="form-label">Password</label>
+      <input class="form-input" type="password" id="auth-password" placeholder="At least 6 characters" />
+    </div>
+    <div class="form-field" id="confirm-field" style="display:none">
+      <label class="form-label">Confirm Password</label>
+      <input class="form-input" type="password" id="auth-confirm" placeholder="Enter again" />
+    </div>
+    <button class="btn-primary" id="auth-btn" onclick="handleAuth()">Log In</button>
+    <div style="text-align:center;margin-top:12px;">
+      <button onclick="handleForgot()" style="background:none;border:none;color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--font);" id="forgot-btn">Forgot Password?</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="app">
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">🥬</span>
+        <h1>Food Keeper</h1>
+      </div>
+      <div class="header-right">
+        <span class="user-email" id="user-email"></span>
+        <button class="icon-btn" onclick="openPanel('settings')" title="Settings">⚙️</button>
+        <button class="logout-btn" onclick="handleLogout()">Log out</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="nav-tabs">
+    <div class="nav-tab-wrap">
+      <button class="nav-tab active" data-view="pantry">🥦 Pantry</button>
+      <button class="nav-tab" data-view="shopping">🛒 Shopping List</button>
+      <button class="nav-tab" data-view="waste">🗑️ Waste Log</button>
+    </div>
+  </div>
+
+  <main class="main">
+    <div class="stats">
+      <div class="stat"><div class="stat-label">Total</div><div class="stat-value green" id="stat-total">0</div></div>
+      <div class="stat"><div class="stat-label">Expiring</div><div class="stat-value amber" id="stat-soon">0</div></div>
+      <div class="stat"><div class="stat-label">Expired</div><div class="stat-value red" id="stat-expired">0</div></div>
+      <div class="stat"><div class="stat-label">Wasted</div><div class="stat-value blue" id="stat-wasted">0</div></div>
+    </div>
+
+    <div class="notif-banner" id="notif-banner">
+      <span id="notif-icon">🔔</span>
+      <span class="notif-text" id="notif-text"></span>
+      <button class="notif-btn" id="notif-action-btn" style="display:none"></button>
+      <button class="notif-close" id="notif-close">✕</button>
+    </div>
+
+    <!-- ── PANTRY VIEW ── -->
+    <div id="view-pantry">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="search-input" type="text" id="search" placeholder="Search ingredients…" />
+      </div>
+
+      <div class="toolbar">
+        <div class="filter-tabs" id="filter-tabs">
+          <button class="ftab active" data-filter="all">All</button>
+          <button class="ftab" data-filter="fridge">🧊 Fridge</button>
+          <button class="ftab" data-filter="freezer">❄️ Freezer</button>
+          <button class="ftab" data-filter="pantry">🗄️ Pantry</button>
+        </div>
+        <div class="toolbar-right">
+          <button class="ghost-btn" id="bulk-toggle-btn" onclick="toggleBulkMode()">☑️ Select</button>
+          <button class="add-btn" id="open-modal">＋ Add</button>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <div class="cat-pills" id="cat-pills">
+          <button class="cat-pill active" data-cat="all">All Categories</button>
+          <button class="cat-pill" data-cat="dairy">🥛 Dairy</button>
+          <button class="cat-pill" data-cat="produce">🥦 Produce</button>
+          <button class="cat-pill" data-cat="meat">🥩 Meat</button>
+          <button class="cat-pill" data-cat="grain">🌾 Grain</button>
+          <button class="cat-pill" data-cat="other">📦 Other</button>
+        </div>
+        <select class="sort-select" id="sort-select">
+          <option value="expiry">By Expiry</option>
+          <option value="name">By Name</option>
+          <option value="added">By Added</option>
+        </select>
+      </div>
+
+      <div class="bulk-bar" id="bulk-bar">
+        <span class="bulk-label" id="bulk-label">0 selected</span>
+        <button class="bulk-btn" onclick="bulkMove('fridge')">→ Fridge</button>
+        <button class="bulk-btn" onclick="bulkMove('freezer')">→ Freezer</button>
+        <button class="bulk-btn" onclick="bulkMove('pantry')">→ Pantry</button>
+        <button class="bulk-btn danger" onclick="bulkDelete()">🗑 Delete</button>
+        <button class="bulk-btn danger" onclick="bulkWaste()">🗑 Log Waste</button>
+      </div>
+
+      <div id="food-container"><div class="loading">Loading…</div></div>
+    </div>
+
+    <!-- ── SHOPPING LIST VIEW ── -->
+    <div id="view-shopping" style="display:none">
+      <div id="shop-list-container"></div>
+      <div class="shop-add-row">
+        <input class="shop-add-input" type="text" id="shop-input" placeholder="Add item…" />
+        <button class="shop-add-btn" onclick="addShopItem()">Add</button>
+      </div>
+      <div style="margin-top:1rem; display:flex; gap:8px;">
+        <button class="ghost-btn" onclick="clearChecked()" style="flex:1; justify-content:center;">Clear checked</button>
+        <button class="ghost-btn" onclick="exportShopList()" style="flex:1; justify-content:center;">📋 Copy list</button>
+      </div>
+    </div>
+
+    <!-- ── WASTE LOG VIEW ── -->
+    <div id="view-waste" style="display:none">
+      <div class="waste-stat-grid">
+        <div class="waste-stat"><div class="waste-stat-num" id="waste-month-count">0</div><div class="waste-stat-label">This Month</div></div>
+        <div class="waste-stat"><div class="waste-stat-num" id="waste-total-count">0</div><div class="waste-stat-label">All Time</div></div>
+      </div>
+      <div class="section-label">Waste History</div>
+      <div id="waste-list-container"></div>
+    </div>
+  </main>
+</div>
+
+<!-- ══ ADD / EDIT MODAL ══ -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">✏️ Add Ingredient</div>
+      <button class="modal-close" id="close-modal">✕</button>
+    </div>
+    <div class="form-field">
+      <label class="form-label">Food Name *</label>
+      <input class="form-input" type="text" id="input-name" placeholder="e.g. Milk, Eggs, Spinach…" />
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label class="form-label">Category</label>
+        <select class="form-select" id="input-category">
+          <option value="dairy">🥛 Dairy</option>
+          <option value="produce">🥦 Produce</option>
+          <option value="meat">🥩 Meat</option>
+          <option value="grain">🌾 Grain</option>
+          <option value="other" selected>📦 Other</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Location *</label>
+        <select class="form-select" id="input-location">
+          <option value="fridge">🧊 Fridge</option>
+          <option value="freezer">❄️ Freezer</option>
+          <option value="pantry">🗄️ Pantry</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label class="form-label">Expiry Date *</label>
+        <input class="form-input" type="date" id="input-expiry" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">Quantity</label>
+        <input class="form-input" type="text" id="input-qty" placeholder="e.g. 500g, 1 box" />
+      </div>
+    </div>
+    <div class="form-field">
+      <label class="form-label">Notes</label>
+      <input class="form-input" type="text" id="input-note" placeholder="Optional, e.g. Opened" />
+    </div>
+    <div class="form-field" id="emoji-field">
+      <label class="form-label">Emoji</label>
+      <div class="emoji-picker" id="emoji-picker"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="close-modal-2">Cancel</button>
+      <button class="btn-save" id="save-btn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SIDE PANELS ══ -->
+<div class="panel-overlay" id="panel-overlay" onclick="closePanel()"></div>
+
+<div class="side-panel" id="panel-settings">
+  <div class="panel-header">
+    <div class="panel-title">⚙️ Settings</div>
+    <button class="modal-close" onclick="closePanel()">✕</button>
+  </div>
+  <div class="panel-body">
+    <div class="section-label">Notifications</div>
+    <div class="setting-row">
+      <div><div class="setting-label">Push Notifications</div><div class="setting-desc">Get alerts when food expires</div></div>
+      <button class="toggle off" id="notif-toggle" onclick="toggleNotif()"></button>
+    </div>
+    <div class="setting-row">
+      <div><div class="setting-label">Days before to warn</div><div class="setting-desc">Alert N days before expiry</div></div>
+      <input class="notif-days-input" type="number" id="notif-days" min="1" max="14" value="3" />
+    </div>
+    <div class="section-label" style="margin-top:1.2rem;">Data</div>
+    <div class="setting-row">
+      <div><div class="setting-label">Export to CSV</div><div class="setting-desc">Download all ingredients</div></div>
+      <button class="export-btn" onclick="exportCSV()">⬇ Export</button>
+    </div>
+    <div class="section-label" style="margin-top:1.2rem;">Household</div>
+    <div class="setting-row">
+      <div><div class="setting-label">Household Code</div><div class="setting-desc">Share with family (coming soon)</div></div>
+      <span style="font-size:12px; color:var(--text3)">Soon™</span>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
