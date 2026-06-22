@@ -123,9 +123,9 @@
           
           <select id="loc-filter" class="filter-dropdown" onchange="handleLocationFilter(this.value)">
             <option value="all">All Locations</option>
-            <option value="fridge">🧊 Fridge</option>
-            <option value="freezer">❄️ Freezer</option>
-            <option value="pantry">🗄️ Pantry</option>
+            <option value="fridge">Fridge</option>
+            <option value="freezer">Freezer</option>
+            <option value="pantry">Pantry</option>
           </select>
 
           <select id="sort-filter" class="filter-dropdown" onchange="handleSort(this.value)">
@@ -160,7 +160,7 @@
         </div>
         <div style="margin-top: 16px; display: flex; gap: 12px;">
           <button class="ghost-btn" onclick="clearChecked()" style="flex: 1; justify-content: center;">Clear Checked</button>
-          <button class="ghost-btn" onclick="exportShopList()" style="flex: 1; justify-content: center;">📋 Copy List to Clipboard</button>
+          <button class="ghost-btn" onclick="exportShopList()" style="flex: 1; justify-content: center;">Copy List to Clipboard</button>
         </div>
       </section>
 
@@ -187,7 +187,7 @@
           </div>
         </div>
         <button class="btn-primary" style="background: var(--accent); color: white; padding: 14px; font-size: 15px;" onclick="generateAICustomMenu()">
-          ✨ Generate Smart Menu Recipes
+           Generate Smart Menu Recipes
         </button>
         <div id="recipes-list-container" style="margin-top: 16px;"></div>
       </section>
@@ -197,7 +197,7 @@
     <div class="overlay" id="overlay" onclick="closeModal()">
       <div class="modal" onclick="event.stopPropagation()">
         <div class="modal-header">
-          <h2 id="modal-title">✏️ Add Ingredient</h2>
+          <h2 id="modal-title"> Add Ingredient</h2>
           <button class="modal-close" onclick="closeModal()">✕</button>
         </div>
         <div class="modal-body">
@@ -226,19 +226,19 @@
             <div class="form-field">
               <label class="form-label">Storage Location</label>
               <select class="form-input" id="input-location">
-                <option value="fridge">Fridge 🧊</option>
-                <option value="freezer">Freezer ❄️</option>
-                <option value="pantry">Pantry 🗄️</option>
+                <option value="fridge">Fridge </option>
+                <option value="freezer">Freezer </option>
+                <option value="pantry">Pantry </option>
               </select>
             </div>
             <div class="form-field">
               <label class="form-label">Food Category</label>
               <select class="form-input" id="input-category">
-                <option value="dairy">Dairy 🥛</option>
-                <option value="produce">Produce 🥦</option>
-                <option value="meat">Meat/Fish 🥩</option>
-                <option value="grain">Grains/Carbs 🌾</option>
-                <option value="other">Other 📦</option>
+                <option value="dairy">Dairy</option>
+                <option value="produce">Produce</option>
+                <option value="meat">Meat/Fish</option>
+                <option value="grain">Grains/Carbs</option>
+                <option value="other">Other</option>
               </select>
             </div>
           </div>
@@ -283,7 +283,7 @@
               <div class="setting-label">Export Spreadsheet Log</div>
               <div class="setting-desc">Download active asset inventory ledger directly into a standardized CSV structure</div>
             </div>
-            <button class="export-btn" onclick="exportCSV()">⬇️ Export CSV</button>
+            <button class="export-btn" onclick="exportCSV()">Export CSV</button>
           </div>
         </div>
       </div>
