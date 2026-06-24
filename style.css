@@ -1236,3 +1236,35 @@ body.bulk-active .card-actions {
 @media (min-width: 601px) {
   .nav-hamburger { display: none; }
 }
+
+/* ADD TO THE BOTTOM OF YOUR STYLE.CSS */
+.receipt-data-table-wrapper table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 14px;
+}
+
+.receipt-data-table-wrapper th {
+  text-align: left;
+  padding: 8px;
+  background: var(--surface2);
+  color: var(--text2);
+  font-weight: 600;
+  border-bottom: 2px solid var(--border2);
+}
+
+.receipt-data-table-wrapper td {
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.receipt-data-table-wrapper tr:last-child td {
+  border-bottom: none;
+}
+
+.receipt-data-table-wrapper strong {
+  color: var(--accent);
+  font-size: 1.1rem;
+}
