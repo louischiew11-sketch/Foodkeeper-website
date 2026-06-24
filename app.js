@@ -262,6 +262,7 @@ function loadSettings() {
 }
 
 // ── CORE APPLICATION TAB VIEW MANAGER ──
+// 1. UPDATE THE switchView FUNCTION IN YOUR APP.JS TO INCLUDE 'receipt'
 function switchView(viewName) {
   currentView = viewName;
   
@@ -269,14 +270,16 @@ function switchView(viewName) {
     btn.classList.toggle('active', btn.dataset.view === viewName);
   });
   
-  ['pantry', 'shopping', 'waste', 'recipes'].forEach(v => {
+  // Added 'receipt' here
+  ['pantry', 'shopping', 'waste', 'recipes', 'receipt'].forEach(v => {
     const el = document.getElementById('view-' + v);
     if (el) el.style.display = (v === viewName) ? '' : 'none';
   });
   
   const statsContainer = document.querySelector('.stats');
   if (statsContainer) {
-    statsContainer.style.display = (viewName === 'shopping' || viewName === 'recipes') ? 'none' : 'grid';
+    // Added 'receipt' check to toggle structural tracking statistics cards
+    statsContainer.style.display = (viewName === 'shopping' || viewName === 'recipes' || viewName === 'receipt') ? 'none' : 'grid';
   }
 }
 
@@ -719,7 +722,7 @@ async function generateAICustomMenu() {
     const ingredientsToUse = expiringIngredients.length > 0 ? expiringIngredients : currentInventoryItems;
     const ingredientTextList = ingredientsToUse.map(i => `- ${i.name} (Qty: ${i.qty || 'N/A'}, Location: ${i.location})`).join('\n');
 
-    const prompt = `You are a professional Michelin-star zero-waste chef.
+    const prompt = `You are a professional homecook michelin chef.
 Generate a creative, highly optimized menu plan incorporating the following active user ingredients:
 ${ingredientTextList}
 
@@ -748,5 +751,80 @@ Requirements:
     if (outputDiv) {
       outputDiv.innerHTML = `<div style="background: var(--red-bg); color: var(--red-text); padding: 12px; border-radius: 8px;">⚠️ Failed to process recipes via Puter engine network node.</div>`;
     }
+  }
+}1
+
+// 2. ADD THESE NEW FUNCTIONS TO THE BOTTOM OF YOUR APP.JS
+let currentReceiptBase64 = null;
+
+function previewReceipt(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    currentReceiptBase64 = e.target.result;
+    document.getElementById('receipt-img-preview').src = currentReceiptBase64;
+    document.getElementById('receipt-preview-box').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+// HELPER FUNCTION: Converts dataURI string safely into an image Blob object
+function dataURItoBlob(dataURI) {
+  const byteString = atob(dataURI.split(',')[1]);
+  const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+  return new Blob([ab], {type: mimeString});
+}
+
+async function processReceiptImage() {
+  const outputDiv = document.getElementById('receipt-results-container');
+  const scanBtn = document.getElementById('scan-receipt-btn');
+
+  if (!currentReceiptBase64) {
+    alert('Please upload an image file first.');
+    return;
+  }
+
+  scanBtn.disabled = true;
+  scanBtn.textContent = 'Analyzing receipt data...';
+  outputDiv.innerHTML = '<div class="loading">🧠 Puter Vision AI is analyzing your image structure...</div>';
+
+  try {
+    // 1. Safely parse whatever file type was uploaded (PNG, WebP, JPEG, etc.) into a file Blob
+    const imageBlob = dataURItoBlob(currentReceiptBase64);
+    const receiptFile = new File([imageBlob], "receipt_ledger_image", { type: imageBlob.type });
+
+    // 2. Define standard context layout rules
+    const prompt = `You are a receipt processing parser.
+Look at the attached image file and find all food items or groceries. Calculate their itemized prices and provide a final grand total sum.
+Filter out non-food items entirely.
+Output formatting rule: You must output ONLY clean HTML layout markup. Use a <table> with "Food Item" and "Price" columns, followed by a bold final total computation container. Do not write markdown text block annotations or code fences like \`\`\`html.`;
+
+    // 3. Make the explicit API call passing the structural file array configuration safely 
+    const response = await puter.ai.chat(prompt, receiptFile);
+    
+    outputDiv.innerHTML = `
+      <div class="recipe-card" style="background: var(--surface); padding: 24px; border-radius: 12px; border: 1px solid var(--border2); box-shadow: var(--shadow);">
+        <span style="background: var(--text); color: var(--bg); padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; margin-bottom: 15px;">Receipt Financial Ledger Data</span>
+        <div class="receipt-data-table-wrapper" style="color: var(--text); font-size: 0.95rem; line-height: 1.6;">
+          ${response.toString()}
+        </div>
+      </div>
+    `;
+    
+    if (typeof confetti === 'function') confetti();
+    if (typeof toast === 'function') toast('Receipt data processed successfully!');
+  } catch (error) {
+    console.error("Receipt Processing Error:", error);
+    outputDiv.innerHTML = `<div style="background: var(--red-bg); color: var(--red-text); padding: 12px; border-radius: 8px;">⚠️ Puter AI processing error. Ensure the image text is legible and clear.</div>`;
+  } finally {
+    scanBtn.disabled = false;
+    scanBtn.textContent = 'Analyze & Compute Total';
   }
 }
