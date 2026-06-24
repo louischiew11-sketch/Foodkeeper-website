@@ -93,6 +93,8 @@
         <button class="nav-tab" data-view="shopping" onclick="switchView('shopping')">🛒 Shopping List</button>
         <button class="nav-tab" data-view="waste" onclick="switchView('waste')">🗑️ Waste Log</button>
         <button class="nav-tab" data-view="recipes" onclick="switchView('recipes')">🍳 Recipes For You</button>
+        <!-- New Tab Button -->
+        <button class="nav-tab" data-view="receipt" onclick="switchView('receipt')">🧾 Scan Receipt</button>
       </div>
     </div>
 
@@ -190,6 +192,33 @@
            Generate Smart Menu Recipes
         </button>
         <div id="recipes-list-container" style="margin-top: 16px;"></div>
+      </section>
+
+      <section id="view-receipt" class="view-section" style="display: none;">
+        <div class="discover-hero-banner">
+          <div style="font-size: 32px;">🧾</div>
+          <div>
+            <h3>Receipt Food & Total Cost Scanner</h3>
+            <p>Upload a clear photo of your grocery receipt. Puter AI will isolate food assets, compute individual values, and tally your grand total.</p>
+          </div>
+        </div>
+
+        <div class="receipt-card" style="background: var(--surface); padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border); box-shadow: var(--shadow);">
+          <div class="form-field">
+            <label class="form-label">Select Receipt Photo</label>
+            <input type="file" id="receipt-file" accept="image/*" class="form-input" onchange="previewReceipt(event)" />
+          </div>
+
+          <div id="receipt-preview-box" style="display: none; text-align: center; margin: 16px 0; padding: 10px; background: var(--bg); border-radius: var(--radius);">
+            <img id="receipt-img-preview" src="" alt="Receipt view" style="max-width: 100%; max-height: 300px; border-radius: var(--radius); border: 1px solid var(--border);" />
+          </div>
+
+          <button class="btn-primary" id="scan-receipt-btn" style="background: var(--accent); color: white; margin-top: 8px;" onclick="processReceiptImage()">
+            Analyze & Compute Total
+          </button>
+        </div>
+
+        <div id="receipt-results-container" style="margin-top: 16px;"></div>
       </section>
 
     </main>
