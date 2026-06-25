@@ -380,9 +380,11 @@ function updateStats() {
   document.getElementById('stat-expired').textContent = foods.filter(f => daysLeft(f.expiry) < 0).length;
   document.getElementById('stat-soon').textContent    = foods.filter(f => { const d = daysLeft(f.expiry); return d >= 0 && d <= notifDays; }).length;
   
-  const currentMonthStr = new Date().toISOString().substring(0,7);
-  const savedThisMonth = wasteLog.filter(w => w.date?.startsWith(currentMonthStr));
-  document.getElementById('stat-saved').textContent = savedThisMonth.length;
+const currentMonthStr = new Date().toISOString().substring(0,7);
+const wastedThisMonth = wasteLog
+  .filter(w => w.date?.startsWith(currentMonthStr))
+  .reduce((sum, w) => sum + (w.price || 0), 0);
+document.getElementById('stat-saved').textContent = 'RM ' + wastedThisMonth.toFixed(2);
 }
 
 // ── BULK MANAGEMENT INTERFACES ──
@@ -415,7 +417,7 @@ async function bulkWaste() {
   const batch = Array.from(selectedIds);
   batch.forEach(id => {
     const f = foods.find(x => x.id === id);
-    if(f) wasteLog.unshift({ name: f.name, emoji: f.emoji || '🍽️', date: today() });
+    wasteLog.unshift({ name: f.name, emoji: f.emoji || '🍽️', date: today(), price: f.price || 0 });
   });
   saveWasteLog();
   renderWasteLog();
@@ -446,7 +448,7 @@ async function eatFood(id) {
 async function wasteFood(id) {
   const f = foods.find(x => x.id === id);
   if (f) {
-    wasteLog.unshift({ name: f.name, emoji: f.emoji || '🍽️', date: today() });
+    wasteLog.unshift({ name: f.name, emoji: f.emoji || '🍽️', date: today(), price: f.price || 0 });
     saveWasteLog();
     renderWasteLog();
   }
@@ -562,6 +564,7 @@ function openModal() {
   document.getElementById('input-name').value = '';
   document.getElementById('input-qty').value  = '';
   document.getElementById('input-note').value = '';
+  document.getElementById('input-price').value = '';
   document.getElementById('input-location').value = 'fridge';
   document.getElementById('input-category').value = 'other';
   document.getElementById('input-expiry').value = today();
@@ -579,6 +582,7 @@ function openEditModal(id) {
   document.getElementById('input-name').value = f.name;
   document.getElementById('input-qty').value  = f.qty || '';
   document.getElementById('input-note').value = f.note || '';
+  document.getElementById('input-price').value = f.price || '';
   document.getElementById('input-location').value = f.location || 'fridge';
   document.getElementById('input-category').value = f.category || 'other';
   document.getElementById('input-expiry').value = f.expiry;
@@ -610,7 +614,8 @@ async function saveFood() {
     qty:      document.getElementById('input-qty').value.trim(),
     note:     document.getElementById('input-note').value.trim(),
     location: document.getElementById('input-location').value,
-    category: document.getElementById('input-category').value
+    category: document.getElementById('input-category').value,
+    price:    parseFloat(document.getElementById('input-price').value) || 0,
   };
 
   if (editingId) {
