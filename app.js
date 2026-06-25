@@ -701,7 +701,7 @@ async function toggleNotif() {
 async function generateAICustomMenu() {
   const outputDiv = document.getElementById('recipes-list-container');
   if (outputDiv) {
-    outputDiv.innerHTML = '<div class="loading">🧠 Food Keeper AI engine analyzing ingredient matrices... Please wait...</div>';
+    outputDiv.innerHTML = '<div class="loading">Food Keeper AI engine analyzing ingredient matrices... Please wait...</div>';
   }
 
   try {
@@ -793,7 +793,7 @@ async function processReceiptImage() {
 
   scanBtn.disabled = true;
   scanBtn.textContent = 'Analyzing receipt data...';
-  outputDiv.innerHTML = '<div class="loading">🧠 Puter Vision AI is analyzing your image structure...</div>';
+  outputDiv.innerHTML = '<div class="loading">🧠 Food Keeper Vision AI is analyzing your image structure...</div>';
 
   try {
     // 1. Safely parse whatever file type was uploaded (PNG, WebP, JPEG, etc.) into a file Blob
