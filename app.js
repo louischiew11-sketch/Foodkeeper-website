@@ -701,7 +701,7 @@ async function toggleNotif() {
 async function generateAICustomMenu() {
   const outputDiv = document.getElementById('recipes-list-container');
   if (outputDiv) {
-    outputDiv.innerHTML = '<div class="loading">🧠 Puter AI engine analyzing ingredient matrices... Please wait...</div>';
+    outputDiv.innerHTML = '<div class="loading">🧠 Food Keeper AI engine analyzing ingredient matrices... Please wait...</div>';
   }
 
   try {
@@ -739,7 +739,7 @@ Requirements:
     if (outputDiv) {
       outputDiv.innerHTML = `
         <div class="recipe-card" style="background: var(--surface); padding: 24px; border-radius: 12px; border: 1px solid var(--border2); margin-top: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
-          <span style="background: var(--accent); color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; margin-bottom: 15px;">Puter AI Custom Menu</span>
+          <span style="background: var(--accent); color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; margin-bottom: 15px;">Food Keeper AI Custom Menu</span>
           <div class="ai-generated-html" style="color: var(--text); font-size: 0.95rem; line-height: 1.6;">
             ${response.toString()}
           </div>
@@ -822,7 +822,7 @@ Output formatting rule: You must output ONLY clean HTML layout markup. Use a <ta
     if (typeof toast === 'function') toast('Receipt data processed successfully!');
   } catch (error) {
     console.error("Receipt Processing Error:", error);
-    outputDiv.innerHTML = `<div style="background: var(--red-bg); color: var(--red-text); padding: 12px; border-radius: 8px;">⚠️ Puter AI processing error. Ensure the image text is legible and clear.</div>`;
+    outputDiv.innerHTML = `<div style="background: var(--red-bg); color: var(--red-text); padding: 12px; border-radius: 8px;">⚠️ Food Keeper AI processing error. Ensure the image text is legible and clear.</div>`;
   } finally {
     scanBtn.disabled = false;
     scanBtn.textContent = 'Analyze & Compute Total';
