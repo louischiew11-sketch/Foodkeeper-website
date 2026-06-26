@@ -759,34 +759,6 @@ Requirements:
   }
 }
 
-// 2. ADD THESE NEW FUNCTIONS TO THE BOTTOM OF YOUR APP.JS
-let currentReceiptBase64 = null;
-
-function previewReceipt(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    currentReceiptBase64 = e.target.result;
-    document.getElementById('receipt-img-preview').src = currentReceiptBase64;
-    document.getElementById('receipt-preview-box').style.display = 'block';
-  };
-  reader.readAsDataURL(file);
-}
-
-// HELPER FUNCTION: Converts dataURI string safely into an image Blob object
-function dataURItoBlob(dataURI) {
-  const byteString = atob(dataURI.split(',')[1]);
-  const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
-  const ab = new ArrayBuffer(byteString.length);
-  const ia = new Uint8Array(ab);
-  for (let i = 0; i < byteString.length; i++) {
-    ia[i] = byteString.charCodeAt(i);
-  }
-  return new Blob([ab], {type: mimeString});
-}
-
 // ── RECEIPT PROCESSING & AUTO-INGESTION ──
 
 let currentReceiptBase64 = null;
@@ -846,7 +818,7 @@ async function processReceiptImage() {
     const receiptFile = new File([imageBlob], "receipt_ledger_image", { type: imageBlob.type });
 
     const prompt = `You are a receipt processing parser.
-Look at the attached image file and find all food items. Calculate their itemized prices. Filter out non-food items entirely.
+Look at the attached image file and find all food items. Calculate their itemized prices. Filter out non-food items entirely, this includes services, taxes, loyalty and non-edible products.
 Estimate a realistic expiration timeframe (in days) for each food item based on typical fridge/pantry storage.
 You must output ONLY a valid JSON array of objects. Do not write markdown text or code fences.
 Use this exact structure:
