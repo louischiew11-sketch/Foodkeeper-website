@@ -787,49 +787,182 @@ function dataURItoBlob(dataURI) {
   return new Blob([ab], {type: mimeString});
 }
 
+// ── RECEIPT PROCESSING & AUTO-INGESTION ──
+
+let currentReceiptBase64 = null;
+let scannedReceiptItems = [];
+
+function previewReceipt(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    currentReceiptBase64 = e.target.result;
+    document.getElementById('receipt-img-preview').src = currentReceiptBase64;
+    document.getElementById('receipt-preview-box').style.display = 'block';
+    
+    // Reset previous scan states
+    const outputDiv = document.getElementById('receipt-results-container');
+    if (outputDiv) outputDiv.innerHTML = '';
+    
+    const addBtn = document.getElementById('add-to-inventory-btn');
+    if (addBtn) addBtn.style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function dataURItoBlob(dataURI) {
+  const byteString = atob(dataURI.split(',')[1]);
+  const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+  return new Blob([ab], {type: mimeString});
+}
+
 async function processReceiptImage() {
   const outputDiv = document.getElementById('receipt-results-container');
   const scanBtn = document.getElementById('scan-receipt-btn');
+  const addBtn = document.getElementById('add-to-inventory-btn');
 
   if (!currentReceiptBase64) {
     alert('Please upload an image file first.');
     return;
   }
 
-  scanBtn.disabled = true;
-  scanBtn.textContent = 'Analyzing receipt data...';
-  outputDiv.innerHTML = '<div class="loading">🧠 Food Keeper Vision AI is analyzing your image structure...</div>';
+  if (scanBtn) {
+    scanBtn.disabled = true;
+    scanBtn.textContent = 'Analyzing receipt data...';
+  }
+  
+  if (addBtn) addBtn.style.display = 'none';
+  if (outputDiv) outputDiv.innerHTML = '<div class="loading">🧠 Food Keeper Vision AI is analyzing your image structure...</div>';
 
   try {
-    // 1. Safely parse whatever file type was uploaded (PNG, WebP, JPEG, etc.) into a file Blob
     const imageBlob = dataURItoBlob(currentReceiptBase64);
     const receiptFile = new File([imageBlob], "receipt_ledger_image", { type: imageBlob.type });
 
-    // 2. Define standard context layout rules
     const prompt = `You are a receipt processing parser.
-Look at the attached image file and find all food items or groceries. Calculate their itemized prices and provide a final grand total sum.
-Filter out non-food items entirely.
-Output formatting rule: You must output ONLY clean HTML layout markup. Use a <table> with "Food Item" and "Price" columns, followed by a bold final total computation container. Do not write markdown text block annotations or code fences like \`\`\`html.`;
+Look at the attached image file and find all food items. Calculate their itemized prices. Filter out non-food items entirely.
+Estimate a realistic expiration timeframe (in days) for each food item based on typical fridge/pantry storage.
+You must output ONLY a valid JSON array of objects. Do not write markdown text or code fences.
+Use this exact structure:
+[
+  {
+    "name": "Item Name",
+    "price": 5.99,
+    "category": "dairy",
+    "estimated_expiry_days": 7,
+    "location": "fridge",
+    "emoji": "🥛"
+  }
+]
+Categories must be: dairy, produce, meat, grain, or other.
+Locations must be: fridge, freezer, or pantry.`;
 
-    // 3. Make the explicit API call passing the structural file array configuration safely 
     const response = await puter.ai.chat(prompt, receiptFile);
+    let rawText = response.toString().trim();
     
-    outputDiv.innerHTML = `
-      <div class="recipe-card" style="background: var(--surface); padding: 24px; border-radius: 12px; border: 1px solid var(--border2); box-shadow: var(--shadow);">
-        <span style="background: var(--text); color: var(--bg); padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; margin-bottom: 15px;">Receipt Financial Ledger Data</span>
-        <div class="receipt-data-table-wrapper" style="color: var(--text); font-size: 0.95rem; line-height: 1.6;">
-          ${response.toString()}
+    let jsonMatch = rawText.match(/\[\s*\{.*\}\s*\]/s);
+    scannedReceiptItems = JSON.parse(jsonMatch ? jsonMatch[0] : rawText);
+
+    let tableHTML = `<table><tr><th>Food Item</th><th>Price</th><th>Est. Expiry</th><th>Storage</th></tr>`;
+    let total = 0;
+    
+    scannedReceiptItems.forEach(item => {
+      tableHTML += `<tr>
+        <td>${item.emoji || '📦'} ${item.name}</td>
+        <td>RM ${item.price.toFixed(2)}</td>
+        <td>${item.estimated_expiry_days || 7} days</td>
+        <td>${LOC_LABEL[item.location] || 'Fridge'}</td>
+      </tr>`;
+      total += item.price;
+    });
+    tableHTML += `<tr><td><strong>Total</strong></td><td><strong>RM ${total.toFixed(2)}</strong></td><td></td><td></td></tr></table>`;
+
+    if (outputDiv) {
+      outputDiv.innerHTML = `
+        <div class="recipe-card" style="background: var(--surface); padding: 24px; border-radius: 12px; border: 1px solid var(--border2); box-shadow: var(--shadow);">
+          <span style="background: var(--text); color: var(--bg); padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; margin-bottom: 15px;">Receipt Financial Ledger Data</span>
+          <div class="receipt-data-table-wrapper" style="color: var(--text); font-size: 0.95rem; line-height: 1.6;">
+            ${tableHTML}
+          </div>
         </div>
-      </div>
-    `;
+      `;
+    }
     
+    if (addBtn) addBtn.style.display = 'block';
+
     if (typeof confetti === 'function') confetti();
-    if (typeof toast === 'function') toast('Receipt data processed successfully!');
+    toast('Receipt data processed successfully!');
   } catch (error) {
     console.error("Receipt Processing Error:", error);
-    outputDiv.innerHTML = `<div style="background: var(--red-bg); color: var(--red-text); padding: 12px; border-radius: 8px;">⚠️ Food Keeper AI processing error. Ensure the image text is legible and clear.</div>`;
+    if (outputDiv) {
+      outputDiv.innerHTML = `<div style="background: var(--red-bg); color: var(--red-text); padding: 12px; border-radius: 8px;">⚠️ Food Keeper AI processing error. Ensure the image text is legible and clear.</div>`;
+    }
   } finally {
-    scanBtn.disabled = false;
-    scanBtn.textContent = 'Analyze & Compute Total';
+    if (scanBtn) {
+      scanBtn.disabled = false;
+      scanBtn.textContent = 'Analyze & Compute Total';
+    }
+  }
+}
+
+async function addScannedItemsToInventory() {
+  const addBtn = document.getElementById('add-to-inventory-btn');
+  if (scannedReceiptItems.length === 0) return;
+
+  if (addBtn) {
+    addBtn.disabled = true;
+    addBtn.textContent = 'Adding items to database...';
+  }
+
+  try {
+    for (let item of scannedReceiptItems) {
+      let expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + (item.estimated_expiry_days || 7));
+
+      const payload = {
+        name: item.name,
+        expiry: expiryDate.toISOString().split('T')[0],
+        emoji: item.emoji || '🍽️',
+        qty: '1',
+        note: 'Auto-added from receipt scan',
+        location: item.location || 'pantry',
+        category: item.category || 'other',
+        price: parseFloat(item.price) || 0,
+      };
+
+      await addFood(payload);
+    }
+    
+    toast(`Successfully added ${scannedReceiptItems.length} items to your inventory!`);
+    
+    scannedReceiptItems = [];
+    const outputDiv = document.getElementById('receipt-results-container');
+    if (outputDiv) outputDiv.innerHTML = '';
+    
+    const fileInput = document.getElementById('receipt-file');
+    if (fileInput) fileInput.value = '';
+    
+    const previewBox = document.getElementById('receipt-preview-box');
+    if (previewBox) previewBox.style.display = 'none';
+    
+    currentReceiptBase64 = null;
+    if (addBtn) addBtn.style.display = 'none';
+    
+    switchView('pantry');
+    
+  } catch (error) {
+    console.error("Error saving items:", error);
+    toast("An error occurred while saving to your inventory.");
+  } finally {
+    if (addBtn) {
+      addBtn.disabled = false;
+      addBtn.textContent = 'Add All Items to Inventory ➕';
+    }
   }
 }
