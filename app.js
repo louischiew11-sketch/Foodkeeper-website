@@ -757,7 +757,7 @@ Requirements:
       outputDiv.innerHTML = `<div style="background: var(--red-bg); color: var(--red-text); padding: 12px; border-radius: 8px;">⚠️ Failed to process recipes via Puter engine network node.</div>`;
     }
   }
-}1
+}
 
 // 2. ADD THESE NEW FUNCTIONS TO THE BOTTOM OF YOUR APP.JS
 let currentReceiptBase64 = null;
